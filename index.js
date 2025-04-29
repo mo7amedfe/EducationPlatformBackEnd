@@ -1,12 +1,8 @@
-import express from 'express'
-const app = express()
-import { config } from 'dotenv'
-import { initapp } from './src/initapp.js'
-import cors from 'cors';
+import express from "express";
+import { initapp } from "./utils/initapp.js";
+import serverless from "serverless-http";
 
-config()
-initapp(app,express)
-    export default app;
+const app = express();
+initapp(app, express);
 
-
-
+export const handler = serverless(app);
