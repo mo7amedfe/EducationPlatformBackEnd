@@ -138,7 +138,25 @@ export const putInDataBase = asyncHandler(async(req,res,next)=>{
 
 // Get user's enrolled courses
 export const getEnrolledCourses = asyncHandler(async (req, res, next) => {
-  const { _id } = req.authuser;
+  const { _id, role } = req.authuser;
+
+  if (role === 'Admin') {
+    // Return all courses for admin
+    const allCourses = await courseModel.find({});
+    const formattedCourses = allCourses.map(course => ({
+      courseId: course._id,
+      title: course.title,
+      description: course.description,
+      price: course.price,
+      image: course.imageurl,
+      selectedSchedule: course.schedules[0],
+      availableSchedules: course.schedules
+    }));
+    return res.status(200).json({
+      message: "All courses for admin",
+      courses: formattedCourses
+    });
+  }
 
   // Find user's enrolled courses and populate course details
   const enrolledCourses = await enrolledCoursesModel.find({ userid: _id })
