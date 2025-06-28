@@ -13,11 +13,10 @@ async function dbConnect() {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
+      bufferCommands: true,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      bufferMaxEntries: 0,
       useNewUrlParser: true,
       useUnifiedTopology: true,
     };
@@ -30,12 +29,12 @@ async function dbConnect() {
 
   try {
     cached.conn = await cached.promise;
+    await mongoose.connection.asPromise();
+    return cached.conn;
   } catch (e) {
     cached.promise = null;
     throw e;
   }
-
-  return cached.conn;
 }
 
 export default dbConnect; 
