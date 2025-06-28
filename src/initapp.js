@@ -45,7 +45,7 @@ mongoose.connect(process.env.DB_URL || "").then(()=>{
 })
 
 // Only start the server if we're not in a serverless environment
-if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+if (process.env.NODE_ENV !== 'production') {
   app.listen(port, () => console.log(`Server listening on port ${port}!`))
 }
 
