@@ -1,4 +1,3 @@
-
 import mongoose, { Schema } from 'mongoose'
 
 // const { boolean } = Joi;
@@ -41,7 +40,7 @@ const userSchema = new Schema(
     role:{
       type: String,
       default:'User',
-      enum:['User','Admin']
+      enum:['User','Admin','Instructor']
       
     },
     phoneNumber:{

@@ -6,15 +6,15 @@ import { courseModel } from "../../../connections/models/course.model.js";
 import { asyncHandler } from "../../utils/errorHandeling.js";
 
 
-// Create a final test for a course (admin only)
+// Create a final test for a course (admin and instructor only)
 export const createFinalTest = asyncHandler(async (req, res, next) => {
   const { role } = req.authuser;
   const { courseId } = req.params;
 
-  if (role !== "Admin") {
+  if (role !== "Admin" && role !== "Instructor") {
     return res
       .status(403)
-      .json({ message: "Unauthorized: Admin access required" });
+      .json({ message: "Unauthorized: Admin or Instructor access required" });
   }
 
   // Check if course exists
@@ -125,15 +125,15 @@ export const createFinalTestSubmission = asyncHandler(
   }
 );
 
-// Get all final test submissions (admin only)
+// Get all final test submissions (admin and instructor only)
 export const reviewAllFinalTestSubmissions = asyncHandler(
   async (req, res, next) => {
     const { role } = req.authuser;
 
-    if (role !== "Admin") {
+    if (role !== "Admin" && role !== "Instructor") {
       return res
         .status(403)
-        .json({ message: "Unauthorized: Admin access required" });
+        .json({ message: "Unauthorized: Admin or Instructor access required" });
     }
 
     const submissions = await submittedFinalTestModel
@@ -155,16 +155,16 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
   }
 );
 
-// Grade a final test submission (admin only)
+// Grade a final test submission (admin and instructor only)
 export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
   const { role } = req.authuser;
 
-  if (role !== "Admin") {
+  if (role !== "Admin" && role !== "Instructor") {
     return res
       .status(403)
-      .json({ message: "Unauthorized: Admin access required" });
+      .json({ message: "Unauthorized: Admin or Instructor access required" });
   }
 
   if (rating < 0 || rating > 5) {
@@ -205,7 +205,7 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
     });
 });
 
-// Get final test file (for students)
+// Get final test file (for students, admins, and instructors)
 export const getFinalTestFile = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
   const userId = req.authuser._id;
@@ -219,8 +219,8 @@ export const getFinalTestFile = asyncHandler(async (req, res, next) => {
       .json({ message: "Final test not found for this course" });
   }
 
-  // If admin, always send the file if it exists
-  if (userRole === "Admin") {
+  // If admin or instructor, always send the file if it exists
+  if (userRole === "Admin" || userRole === "Instructor") {
     if (!finalTest.file || !finalTest.file.filePath) {
       return res.status(404).json({ message: "Final test file not found" });
     }
@@ -275,16 +275,16 @@ export const getFinalTestFile = asyncHandler(async (req, res, next) => {
   res.download(finalTest.file.filePath);
 });
 
-// Download student's final test submission (admin only)
+// Download student's final test submission (admin and instructor only)
 export const downloadStudentSubmission = asyncHandler(
   async (req, res, next) => {
     const { submissionId } = req.params;
     const { role } = req.authuser;
 
-    if (role !== "Admin") {
+    if (role !== "Admin" && role !== "Instructor") {
       return res
         .status(403)
-        .json({ message: "Unauthorized: Admin access required" });
+        .json({ message: "Unauthorized: Admin or Instructor access required" });
     }
 
     const submission = await submittedFinalTestModel
@@ -380,3 +380,127 @@ export const getStudentFinalTestFeedback = async (req, res) => {
     });
   }
 };
+
+// Update a final test (admin and instructor only)
+export const updateFinalTest = asyncHandler(async (req, res, next) => {
+  const { role } = req.authuser;
+  const { courseId } = req.params;
+
+  if (role !== "Admin" && role !== "Instructor") {
+    return res
+      .status(403)
+      .json({ message: "Unauthorized: Admin or Instructor access required" });
+  }
+
+  // Check if course exists
+  const course = await courseModel.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ message: "Course not found" });
+  }
+
+  // Check if final test exists
+  const existingTest = await finalTestModel.findOne({ courseId });
+  if (!existingTest) {
+    return res
+      .status(404)
+      .json({ message: "Final test not found for this course" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  // Update the final test with new file
+  existingTest.file = {
+    filePath: req.file.path,
+  };
+  await existingTest.save();
+
+  res
+    .status(200)
+    .json({ message: "Final test updated successfully", finalTest: existingTest });
+});
+
+// Delete a final test (admin and instructor only)
+export const deleteFinalTest = asyncHandler(async (req, res, next) => {
+  const { role } = req.authuser;
+  const { courseId } = req.params;
+
+  if (role !== "Admin" && role !== "Instructor") {
+    return res
+      .status(403)
+      .json({ message: "Unauthorized: Admin or Instructor access required" });
+  }
+
+  // Check if course exists
+  const course = await courseModel.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ message: "Course not found" });
+  }
+
+  // Check if final test exists
+  const existingTest = await finalTestModel.findOne({ courseId });
+  if (!existingTest) {
+    return res
+      .status(404)
+      .json({ message: "Final test not found for this course" });
+  }
+
+  // Check if there are any submissions for this final test
+  const submissions = await submittedFinalTestModel.find({ finalTestId: existingTest._id });
+  if (submissions.length > 0) {
+    return res
+      .status(400)
+      .json({ 
+        message: "Cannot delete final test. There are existing submissions for this test.",
+        submissionCount: submissions.length
+      });
+  }
+
+  // Delete the final test
+  await finalTestModel.findByIdAndDelete(existingTest._id);
+
+  res
+    .status(200)
+    .json({ message: "Final test deleted successfully" });
+});
+
+// Get final test info for a course (admin and instructor only)
+export const getFinalTestInfo = asyncHandler(async (req, res, next) => {
+  const { role } = req.authuser;
+  const { courseId } = req.params;
+
+  if (role !== "Admin" && role !== "Instructor") {
+    return res
+      .status(403)
+      .json({ message: "Unauthorized: Admin or Instructor access required" });
+  }
+
+  // Check if course exists
+  const course = await courseModel.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ message: "Course not found" });
+  }
+
+  // Get final test info
+  const finalTest = await finalTestModel.findOne({ courseId });
+  if (!finalTest) {
+    return res
+      .status(404)
+      .json({ message: "Final test not found for this course" });
+  }
+
+  // Get submission count
+  const submissionCount = await submittedFinalTestModel.countDocuments({ finalTestId: finalTest._id });
+
+  res.status(200).json({
+    message: "Final test info retrieved successfully",
+    finalTest: {
+      id: finalTest._id,
+      courseId: finalTest.courseId,
+      hasFile: !!finalTest.file,
+      createdAt: finalTest.createdAt,
+      submissionCount
+    }
+  });
+});

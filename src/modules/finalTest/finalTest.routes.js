@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { isAuth } from '../../middelwares/auth.js';
+import { checkAdminOrInstructor } from '../../middelwares/adminAuth.js';
 import multer from 'multer';
 import path from 'path';
 import {
@@ -9,7 +10,10 @@ import {
   gradeFinalTestSubmission,
   getFinalTestFile,
   downloadStudentSubmission,
-  getStudentFinalTestFeedback
+  getStudentFinalTestFeedback,
+  updateFinalTest,
+  deleteFinalTest,
+  getFinalTestInfo
 } from './finalTest.controller.js';
 
 const router = Router();
@@ -42,11 +46,14 @@ const upload = multer({
   }
 });
 
-// Admin routes
-router.post('/course/:courseId/create', isAuth(), upload.single('finalTestFile'), createFinalTest);
-router.get('/review', isAuth(), reviewAllFinalTestSubmissions);
-router.post('/:submissionId/grade', isAuth(), gradeFinalTestSubmission);
-router.get('/submission/:submissionId/download', isAuth(), downloadStudentSubmission);
+// Admin and Instructor routes
+router.post('/course/:courseId/create', isAuth(), checkAdminOrInstructor(), upload.single('finalTestFile'), createFinalTest);
+router.put('/course/:courseId/update', isAuth(), checkAdminOrInstructor(), upload.single('finalTestFile'), updateFinalTest);
+router.delete('/course/:courseId/delete', isAuth(), checkAdminOrInstructor(), deleteFinalTest);
+router.get('/course/:courseId/info', isAuth(), checkAdminOrInstructor(), getFinalTestInfo);
+router.get('/review', isAuth(), checkAdminOrInstructor(), reviewAllFinalTestSubmissions);
+router.post('/:submissionId/grade', isAuth(), checkAdminOrInstructor(), gradeFinalTestSubmission);
+router.get('/submission/:submissionId/download', isAuth(), checkAdminOrInstructor(), downloadStudentSubmission);
 
 // Student routes
 router.get('/course/:courseId/file', isAuth(), getFinalTestFile);

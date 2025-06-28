@@ -136,12 +136,12 @@ export const deleteSubmission = asyncHandler(async (req, res, next) => {
   res.status(200).json({ message: 'Submission deleted successfully' });
 });
 
-// Review all submissions (admin only)
+// Review all submissions (admin and instructor only)
 export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
   const { role } = req.authuser;
 
-  if (role !== 'Admin') {
-    return res.status(403).json({ message: 'Unauthorized: Admin access required' });
+  if (role !== 'Admin' && role !== 'Instructor') {
+    return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
   }
 
   const submissions = await submittedAssignmentModel.find()
@@ -161,14 +161,14 @@ export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
   res.status(200).json({ submissions });
 });
 
-// Grade a submission (admin only)
+// Grade a submission (admin and instructor only)
 export const gradeSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
   const { role } = req.authuser;
 
-  if (role !== 'Admin') {
-    return res.status(403).json({ message: 'Unauthorized: Admin access required' });
+  if (role !== 'Admin' && role !== 'Instructor') {
+    return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
   }
 
   if (rating < 0 || rating > 5) {
@@ -264,14 +264,14 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
   }
 };
 
-// Download a submission (for admin to download any submission)
+// Download a submission (for admin and instructor to download any submission)
 
 export const downloadSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { role } = req.authuser;
 
-  if (role !== 'Admin') {
-    return res.status(403).json({ message: 'Unauthorized: Admin access required' });
+  if (role !== 'Admin' && role !== 'Instructor') {
+    return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
   }
 
   const submission = await submittedAssignmentModel.findById(submissionId)

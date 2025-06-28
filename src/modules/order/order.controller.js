@@ -140,8 +140,8 @@ export const putInDataBase = asyncHandler(async(req,res,next)=>{
 export const getEnrolledCourses = asyncHandler(async (req, res, next) => {
   const { _id, role } = req.authuser;
 
-  if (role === 'Admin') {
-    // Return all courses for admin
+  if (role === 'Admin' || role === 'Instructor') {
+    // Return all courses for admin and instructor
     const allCourses = await courseModel.find({});
     const formattedCourses = allCourses.map(course => ({
       courseId: course._id,
@@ -153,7 +153,7 @@ export const getEnrolledCourses = asyncHandler(async (req, res, next) => {
       availableSchedules: course.schedules
     }));
     return res.status(200).json({
-      message: "All courses for admin",
+      message: `All courses for ${role}`,
       courses: formattedCourses
     });
   }

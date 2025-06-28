@@ -196,6 +196,9 @@ export const tryadmin = asyncHandler(async (req, res, next) => {
   if (user.role == "Admin") {
     return res.status(200).json({ message: "Admin", user });
   }
+  if (user.role == "Instructor") {
+    return res.status(200).json({ message: "Instructor", user });
+  }
   return res.status(200).json({ message: "User", user });
 });
 

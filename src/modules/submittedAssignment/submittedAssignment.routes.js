@@ -14,6 +14,7 @@ import {
   getStudentAssignmentSubmissions
 } from './submittedAssignment.controller.js';
 import { isAuth } from '../../middelwares/auth.js';
+import { checkAdminOrInstructor } from '../../middelwares/adminAuth.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -52,9 +53,9 @@ router.get('/my-submissions/:submissionId/download', isAuth(), downloadMySubmiss
 router.post('/lesson/:lessonId/submit', isAuth(), upload.single('assignmentFile'), createSubmission);
 router.get('/submissions', isAuth(), getStudentAssignmentSubmissions);
 
-// Admin routes
-router.get('/review', isAuth(), reviewAllSubmissions);
-router.post('/:submissionId/grade', isAuth(), gradeSubmission);
-router.get('/:submissionId/download', isAuth(), downloadSubmission);
+// Admin and Instructor routes
+router.get('/review', isAuth(), checkAdminOrInstructor(), reviewAllSubmissions);
+router.post('/:submissionId/grade', isAuth(), checkAdminOrInstructor(), gradeSubmission);
+router.get('/:submissionId/download', isAuth(), checkAdminOrInstructor(), downloadSubmission);
 
 export default router; 
