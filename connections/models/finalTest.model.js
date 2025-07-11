@@ -9,7 +9,8 @@ const finalTestSchema = new mongoose.Schema(
       unique: true // Each course can have only one final test
     },
     file: {
-      filePath: String,
+      url: String,         // Cloudinary URL
+      public_id: String,   // Cloudinary public_id
       title: String,
       description: String
     },

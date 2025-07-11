@@ -20,15 +20,8 @@ import path from 'path';
 
 const router = Router();
 
-// Configure multer for local file storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/submissions');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
+// Configure multer for memory storage (for Cloudinary upload)
+const storage = multer.memoryStorage();
 
 const upload = multer({ storage });
 

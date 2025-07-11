@@ -15,19 +15,13 @@ import {
   deleteFinalTest,
   getFinalTestInfo
 } from './finalTest.controller.js';
+import { multercloudFunction } from '../../services/multerCloudenary.js';
+import { allowedExtensions } from '../../utils/allowedExtentions.js';
 
 const router = Router();
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/finalTests');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'finalTest-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 // File filter to only allow PDF files
 const fileFilter = (req, file, cb) => {
@@ -42,12 +36,12 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
 
 // Admin and Instructor routes
-router.post('/course/:courseId/create', isAuth(), checkAdminOrInstructor(), upload.single('finalTestFile'), createFinalTest);
+router.post('/course/:courseId/create', isAuth(), checkAdminOrInstructor(),multercloudFunction(allowedExtensions.Files).single('finalTestFile'), createFinalTest);
 router.put('/course/:courseId/update', isAuth(), checkAdminOrInstructor(), upload.single('finalTestFile'), updateFinalTest);
 router.delete('/course/:courseId/delete', isAuth(), checkAdminOrInstructor(), deleteFinalTest);
 router.get('/course/:courseId/info', isAuth(), checkAdminOrInstructor(), getFinalTestInfo);
@@ -57,7 +51,7 @@ router.get('/submission/:submissionId/download', isAuth(), checkAdminOrInstructo
 
 // Student routes
 router.get('/course/:courseId/file', isAuth(), getFinalTestFile);
-router.post('/course/:courseId/submit', isAuth(), upload.single('finalTestFile'), createFinalTestSubmission);
+router.post('/course/:courseId/submit', isAuth(), multercloudFunction(allowedExtensions.Files).single('finalTestFile'), createFinalTestSubmission);
 
 router.get('/feedback', isAuth(), getStudentFinalTestFeedback);
 

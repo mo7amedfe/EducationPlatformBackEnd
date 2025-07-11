@@ -13,7 +13,7 @@ const submittedAssignmentSchema = new mongoose.Schema(
       required: true
     },
     file: {
-      secure_url: String,
+      url: String,
       public_id: String,
       filePath: String
     },

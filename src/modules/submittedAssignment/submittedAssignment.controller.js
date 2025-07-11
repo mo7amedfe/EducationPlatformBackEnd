@@ -3,6 +3,7 @@ import { asyncHandler } from '../../utils/errorHandeling.js';
 import { leasonModel } from '../../../connections/models/leason.model.js';
 import fs from 'fs';
 import path from 'path';
+import cloudinary from '../../utils/cloudinaryConfigration.js';
 // Get all submissions for a lesson
 export const getAllSubmissions = asyncHandler(async (req, res, next) => {
   const { lessonId } = req.params;
@@ -39,43 +40,16 @@ export const downloadMySubmission = asyncHandler(async (req, res, next) => {
   const userId = req.authuser._id; // Get the authenticated user's ID
 
   const submission = await submittedAssignmentModel.findOne({ _id: submissionId, userId });
-  if (!submission || !submission.file || !submission.file.filePath) {
+  if (!submission || !submission.file || !submission.file.url) {
     return res.status(404).json({ message: 'Submission not found or unauthorized' });
   }
 
-  res.download(submission.file.filePath);
+
+  return res.status(200).json({ url: submission.file.url });
+
 });
 
 // Create a submission
-// export const createSubmission = asyncHandler(async (req, res, next) => {
-//   try {
-//     const { lessonId } = req.params;
-//     const userId = req.authuser._id; // Get userId from authenticated user
-
-//     if (!userId) {
-//       return res.status(401).json({ message: "Unauthorized: User ID not found" });
-//     }
-
-//     if (!req.file) {
-//       return res.status(400).json({ message: "No file uploaded" });
-//     }
-
-//     // Save file locally
-//     const filePath = req.file.path; // multer saves the file locally
-
-//     const submission = await submittedAssignmentModel.create({
-//       lessonId,
-//       userId,
-//       file: { filePath },
-//       submittedAt: new Date()
-//     });
-
-//     res.status(201).json({ message: 'Submission created successfully', submission });
-//   } catch (error) {
-//     console.error('Error creating submission:', error);
-//     res.status(500).json({ message: 'Internal Server Error', error: error.message });
-//   }
-// });
 export const createSubmission = asyncHandler(async (req, res, next) => {
     try {
       const { lessonId } = req.params;
@@ -89,12 +63,31 @@ export const createSubmission = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ message: "No file uploaded" });
       }
   
-      const filePath = req.file.path;
+      // Upload file to Cloudinary
+      let cloudinaryResult;
+      try {
+        cloudinaryResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "raw",
+              folder: "assignmentSubmissions",
+              format: "pdf"
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
+        });
+      } catch (err) {
+        return res.status(500).json({ message: "Cloudinary upload error", error: err.message });
+      }
   
       const submission = await submittedAssignmentModel.create({
         lessonId,
         userId,
-        file: { filePath },
+        file: { url: cloudinaryResult.secure_url, public_id: cloudinaryResult.public_id },
         submittedAt: new Date()
       });
   
@@ -265,27 +258,11 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
 };
 
 // Download a submission (for admin and instructor to download any submission)
-
 export const downloadSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
-  const { role } = req.authuser;
-
-  if (role !== 'Admin' && role !== 'Instructor') {
-    return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
+  const submission = await submittedAssignmentModel.findById(submissionId);
+  if (!submission || !submission.file || !submission.file.url) {
+    return res.status(404).json({ message: 'Submission not found' });
   }
-
-  const submission = await submittedAssignmentModel.findById(submissionId)
-    .populate('userId', 'name email');
-
-  if (!submission || !submission.file || !submission.file.filePath) {
-    return res.status(404).json({ message: 'Submission not found or no file attached' });
-  }
-
-  const filePath = path.resolve(submission.file.filePath);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: 'File not found on server' });
-  }
-
-  return res.download(filePath);
+  res.status(200).json({ url: submission.file.url });
 });

@@ -11,8 +11,7 @@ const connectDB = async () => {
   try {
     await mongoose.connect(process.env.DB_URL, {
       serverSelectionTimeoutMS: 10000,
-      // bufferCommands: false,
-      dbName: 'test' // ✅ مهم تحدد اسم الداتا بيز لو مش محطوط في URI
+      dbName: 'test'
     });
 
     console.log("✅ Connected to MongoDB");

@@ -18,17 +18,6 @@ import path from 'path';
 
 const router = Router();
 
-// Configure multer for local file storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/assignments');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
-
-const upload = multer({ storage });
 
 // Lesson routes
 router.post('/', isAuth(), checkAdminOrInstructor(), addleason);
@@ -39,7 +28,6 @@ router.delete('/:lessonId', isAuth(), deleteLesson);
 
 // Video and assignment routes
 router.post('/:lessonId/video', isAuth(), checkAdminOrInstructor(), multercloudFunction(allowedExtensions.Videos).single('video'), addvideotoleason);
-router.post('/:lessonId/assignment', isAuth(), checkAdminOrInstructor(), upload.single('file'), uploadAssignment);
 router.post('/:lessonId/submit', isAuth(), multercloudFunction(allowedExtensions.Files).single('file'), uploadAssignment);
 router.get('/:lessonId/assignment/download', isAuth(), downloadAssignment);
 

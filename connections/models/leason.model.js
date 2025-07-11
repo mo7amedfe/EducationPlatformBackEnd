@@ -22,12 +22,12 @@ const leasonSchema = new mongoose.Schema(
       format: String
     },
     assignment: {
-      secure_url: String,
+      url: String,
       public_id: String,
-      filePath: String,
       title: String,
       description: String,
-      dueDate: Date
+      dueDate: Date,
+      filePath:String
     },
     submissions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubmittedAssignment' }]
   },

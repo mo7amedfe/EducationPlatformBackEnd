@@ -13,7 +13,8 @@ const submittedFinalTestSchema = new mongoose.Schema(
       required: true
     },
     file: {
-      filePath: String
+      url: String,         // Cloudinary URL
+      public_id: String    // Cloudinary public_id
     },
     rating: {
       type: Number,
