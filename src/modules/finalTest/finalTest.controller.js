@@ -398,114 +398,165 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
 });
 
 // Get final test file (for students, admins, and instructors)
+import axios from "axios";
+
 export const getFinalTestFile = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
   const userId = req.authuser._id;
   const userRole = req.authuser.role;
 
-  // Get the final test
   const finalTest = await finalTestModel.findOne({ courseId });
   if (!finalTest) {
-    return res
-      .status(404)
-      .json({ message: "Final test not found for this course" });
+    return res.status(404).json({ message: "Final test not found for this course" });
   }
 
-  // If admin or instructor, always send the file if it exists
+  if (!finalTest.file || !finalTest.file.url) {
+    return res.status(404).json({ message: "Final test file not found" });
+  }
+
+  // Admins & Instructors always allowed to download
   if (userRole === "Admin" || userRole === "Instructor") {
-    if (!finalTest.file || !finalTest.file.url) {
-      return res.status(404).json({ message: "Final test file not found" });
-    }
-    return res.status(200).json({ url: finalTest.file.url });
+    const response = await axios.get(finalTest.file.url, { responseType: "arraybuffer" });
+
+    res.setHeader("Content-Disposition", `attachment; filename=final-test.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+
+    return res.send(response.data);
   }
 
-  // Get all lessons for the course
+  // Check if user submitted and all assignments graded
   const lessons = await leasonModel.find({ courseId });
   if (!lessons || lessons.length === 0) {
-    return res
-      .status(404)
-      .json({ message: "No lessons found for this course" });
+    return res.status(404).json({ message: "No lessons found for this course" });
   }
 
-  const lessonIds = lessons.map((lesson) => lesson._id);
-
-  // Check if all assignments are submitted and graded
+  const lessonIds = lessons.map(lesson => lesson._id);
   const submissions = await submittedAssignmentModel.find({
     userId,
     lessonId: { $in: lessonIds },
   });
 
-  // Check if all lessons have submissions
   if (submissions.length !== lessons.length) {
-    const missingSubmissions = lessons.length - submissions.length;
+    const remaining = lessons.length - submissions.length;
     return res.status(400).json({
-      message: `You must submit all course assignments before accessing the final test. ${missingSubmissions} assignment(s) remaining.`,
-      remainingAssignments: missingSubmissions,
-      totalAssignments: lessons.length,
-      submittedAssignments: submissions.length,
+      message: `You must submit all assignments. ${remaining} remaining.`,
     });
   }
 
-  // Check if all submissions are graded
-  const ungradedSubmissions = submissions.filter(
-    (sub) => sub.status !== "graded"
-  );
-  if (ungradedSubmissions.length > 0) {
+  const ungraded = submissions.filter(sub => sub.status !== "graded");
+  if (ungraded.length > 0) {
     return res.status(400).json({
-      message: `All your assignments must be graded before accessing the final test. ${ungradedSubmissions.length} assignment(s) pending review.`,
-      pendingReviews: ungradedSubmissions.length,
-      totalAssignments: lessons.length,
+      message: `All assignments must be graded. ${ungraded.length} pending.`,
     });
   }
 
-  // Check if file exists
-  if (!finalTest.file || !finalTest.file.url) {
-    return res.status(404).json({ message: "Final test file not found" });
-  }
+  // All checks passed, download from Cloudinary and return blob
+  const response = await axios.get(finalTest.file.url, { responseType: "arraybuffer" });
 
-  // Return the Cloudinary URL as JSON
-  res.status(200).json({ url: finalTest.file.url });
+  res.setHeader("Content-Disposition", `attachment; filename=final-test.pdf`);
+  res.setHeader("Content-Type", "application/pdf");
+
+  return res.send(response.data);
 });
 
+
 // Download student's final test submission (admin and instructor only)
-export const downloadStudentSubmission = asyncHandler(
-  async (req, res, next) => {
-    const { submissionId } = req.params;
-    const { role } = req.authuser;
+// export const downloadStudentSubmission = asyncHandler(
+//   async (req, res, next) => {
+//     const { submissionId } = req.params;
+//     const { role } = req.authuser;
 
-    if (role !== "Admin" && role !== "Instructor") {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized: Admin or Instructor access required" });
-    }
+//     if (role !== "Admin" && role !== "Instructor") {
+//       return res
+//         .status(403)
+//         .json({ message: "Unauthorized: Admin or Instructor access required" });
+//     }
 
-    const submission = await submittedFinalTestModel
-      .findById(submissionId)
-      .populate({
-        path: "userId",
-        select: "username email",
-      })
-      .populate({
-        path: "finalTestId",
-        select: "courseId",
-        populate: {
-          path: "courseId",
-          select: "title",
-        },
-      });
+//     const submission = await submittedFinalTestModel
+//       .findById(submissionId)
+//       .populate({
+//         path: "userId",
+//         select: "username email",
+//       })
+//       .populate({
+//         path: "finalTestId",
+//         select: "courseId",
+//         populate: {
+//           path: "courseId",
+//           select: "title",
+//         },
+//       });
 
-    if (!submission) {
-      return res.status(404).json({ message: "Submission not found" });
-    }
+//     if (!submission) {
+//       return res.status(404).json({ message: "Submission not found" });
+//     }
 
-    if (!submission.file || !submission.file.url) {
-      return res.status(404).json({ message: "Submission file not found" });
-    }
+//     if (!submission.file || !submission.file.url) {
+//       return res.status(404).json({ message: "Submission file not found" });
+//     }
 
-    // Return the Cloudinary URL as JSON
-    res.status(200).json({ url: submission.file.url });
+//     // Return the Cloudinary URL as JSON
+//     res.status(200).json({ url: submission.file.url });
+//   }
+// );
+
+
+export const downloadStudentSubmission = asyncHandler(async (req, res, next) => {
+  const { submissionId } = req.params;
+  const { role } = req.authuser;
+
+  if (role !== "Admin" && role !== "Instructor") {
+    return res.status(403).json({
+      message: "Unauthorized: Admin or Instructor access required",
+    });
   }
-);
+
+  const submission = await submittedFinalTestModel
+    .findById(submissionId)
+    .populate({
+      path: "userId",
+      select: "username email",
+    })
+    .populate({
+      path: "finalTestId",
+      select: "courseId",
+      populate: {
+        path: "courseId",
+        select: "title",
+      },
+    });
+
+  if (!submission) {
+    return res.status(404).json({ message: "Submission not found" });
+  }
+
+  if (!submission.file || !submission.file.url) {
+    return res.status(404).json({ message: "Submission file not found" });
+  }
+
+  try {
+    // Download file from Cloudinary
+    const response = await axios({
+      method: 'GET',
+      url: submission.file.url,
+      responseType: 'stream',
+    });
+
+    // Set headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${submission.userId.username}-final-submission.pdf"`
+    );
+
+    // Pipe file stream to response
+    response.data.pipe(res);
+  } catch (err) {
+    console.error("Download error:", err.message);
+    res.status(500).json({ message: "Failed to download the file" });
+  }
+});
+
 
 export const getStudentFinalTestFeedback = async (req, res) => {
   try {

@@ -4,6 +4,10 @@ import { leasonModel } from '../../../connections/models/leason.model.js';
 import fs from 'fs';
 import path from 'path';
 import cloudinary from '../../utils/cloudinaryConfigration.js';
+import axios from 'axios';
+import https from 'https'; // ضروري علشان نعمل request للملف من Cloudinary
+
+
 // Get all submissions for a lesson
 export const getAllSubmissions = asyncHandler(async (req, res, next) => {
   const { lessonId } = req.params;
@@ -35,18 +39,27 @@ export const getMySubmission = asyncHandler(async (req, res, next) => {
 });
 
 // Download a submission (for students to download their own submission)
+
 export const downloadMySubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
-  const userId = req.authuser._id; // Get the authenticated user's ID
+  const userId = req.authuser._id;
 
   const submission = await submittedAssignmentModel.findOne({ _id: submissionId, userId });
   if (!submission || !submission.file || !submission.file.url) {
     return res.status(404).json({ message: 'Submission not found or unauthorized' });
   }
 
+  const fileUrl = submission.file.url;
 
-  return res.status(200).json({ url: submission.file.url });
-
+  // طلب مباشر للملف من Cloudinary
+  https.get(fileUrl, (fileRes) => {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=submission.pdf');
+    fileRes.pipe(res);
+  }).on('error', (err) => {
+    console.error('File download error:', err);
+    res.status(500).json({ message: 'Failed to download file.' });
+  });
 });
 
 // Create a submission
@@ -258,11 +271,39 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
 };
 
 // Download a submission (for admin and instructor to download any submission)
-export const downloadSubmission = asyncHandler(async (req, res, next) => {
+
+export const downloadSubmission = asyncHandler(async (req, res) => {
   const { submissionId } = req.params;
+
   const submission = await submittedAssignmentModel.findById(submissionId);
-  if (!submission || !submission.file || !submission.file.url) {
+  if (!submission || !submission.file?.url) {
     return res.status(404).json({ message: 'Submission not found' });
   }
-  res.status(200).json({ url: submission.file.url });
+
+  const cloudinaryUrl = submission.file.url;
+
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: cloudinaryUrl,
+      responseType: 'arraybuffer', // ← مهم جداً علشان تبني blob من الـ buffer
+      maxRedirects: 5,
+    });
+
+    const contentType = response.headers['content-type'] || 'application/pdf';
+    const contentLength = response.headers['content-length'] || undefined;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'attachment; filename="submission.pdf"');
+
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+
+    res.status(200).send(response.data); // ← رجّع الـ buffer مباشرة
+  } catch (error) {
+    console.error('Failed to download file:', error.message);
+    res.status(500).json({ message: 'Error downloading file', error: error.message });
+  }
 });
+

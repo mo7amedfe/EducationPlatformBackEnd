@@ -4,8 +4,7 @@ import { asyncHandler } from "../../utils/errorHandeling.js";
 import { v2 as cloudinary } from "cloudinary";
 import { courseModel } from "../../../connections/models/course.model.js";
 import fs from "fs"; // Needed to remove local file after upload
-import mongoose from "mongoose";
-import axios from "axios";
+import https from 'https';
 
 // Add a new lesson to a course
 export const addleason = asyncHandler(async (req, res, next) => {
@@ -177,42 +176,7 @@ export const addvideotoleason = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Upload assignment file
-// export const uploadAssignment = asyncHandler(async (req, res, next) => {
-//   try {
-//     const { lessonId } = req.params;
-//     const { title, description, dueDate } = req.body;
 
-//     if (!req.file) {
-//       return res.status(400).json({ message: "No file uploaded" });
-//     }
-
-//     const updatedLesson = await leasonModel.findByIdAndUpdate(
-//       lessonId,
-//       {
-//         assignment: {
-//           filePath, // Store the local file path
-//           title,
-//           description,
-//           dueDate: dueDate ? new Date(dueDate) : undefined,
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedLesson) {
-//       return res.status(404).json({ message: "Lesson not found" });
-//     }
-
-//     res.status(200).json({
-//       message: "Assignment uploaded successfully",
-//       lesson: updatedLesson,
-//     });
-//   } catch (err) {
-//     console.error(err); // <--- This will help you debug!
-//     res.status(500).json({ message: "Fail", error: err.message });
-//   }
-// });
 export const uploadAssignment = asyncHandler(async (req, res, next) => {
   try {
     const { lessonId } = req.params;
@@ -342,18 +306,24 @@ export const gradeAssignment = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Download assignment PDF
+
 export const downloadAssignment = asyncHandler(async (req, res, next) => {
   const { lessonId } = req.params;
   const lesson = await leasonModel.findById(lessonId);
-
-  console.log("Lesson:", lesson);
-  console.log("Assignment:", lesson?.assignment);
-  console.log("FilePath:", lesson?.assignment?.filePath);
 
   if (!lesson || !lesson.assignment || !lesson.assignment.filePath) {
     return res.status(404).json({ message: "Assignment PDF not found" });
   }
 
-  return res.status(200).json({url:lesson.assignment.filePath});
+  const fileUrl = lesson.assignment.filePath;
+
+  // نجيب الملف من URL خارجي (زي Cloudinary)
+  https.get(fileUrl, (fileRes) => {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=assignment.pdf');
+    fileRes.pipe(res);
+  }).on('error', (err) => {
+    console.error('File download error:', err);
+    res.status(500).json({ message: 'Failed to download assignment file.' });
+  });
 });
