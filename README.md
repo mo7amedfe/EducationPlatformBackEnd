@@ -64,6 +64,24 @@ Or you can register a new student account from the login page.
 
 ---
 
+## 🧰 Tech Stack
+
+.env variables 
+
+PORT = "3000" 
+SALT_ROUNDS = "8"
+DB_URL="mongodb+srv://admin:Memotito78@cluster0.t6noy0u.mongodb.net"
+API_KEY="955435344855769"
+API_SECRET="fmZQCTNm1QRTMZeBnqvKys1w3FQ"
+CLOUD_NAME="dsixcalf3"
+STRIPE_SECRET_KEY="sk_test_51RKeDzFvihyT1UjAeM3DOMJt5Mtfett0wutHTa0qZdZ24QYSUYWhXWKdACALNHUGMPvJCiF8oVXAwdF0ZT83VeIH00kxR59ALi"
+ORDER_TOKEN="orderToken"
+DEFAULT_SIGNATURE="defaultSignature"
+
+
+---
+
+
 ## 📦 Installation & Setup
 
 ```bash
