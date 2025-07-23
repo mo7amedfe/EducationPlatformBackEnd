@@ -64,9 +64,7 @@ Or you can register a new student account from the login page.
 
 ---
 
-## 🧰 Tech Stack
-
-.env variables 
+## .env variables 
 
 PORT = "3000" 
 SALT_ROUNDS = "8"
