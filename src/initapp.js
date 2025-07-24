@@ -1,5 +1,5 @@
 import cors from "cors"
-import {userRouter,course,schedule,cart,order, leason} from "./allroutes.js"
+import {userRouter,course,cart,order, leason} from "./allroutes.js"
 import submittedAssignmentRoutes from "./modules/submittedAssignment/submittedAssignment.routes.js"
 import finalTestRoutes from "./modules/finalTest/finalTest.routes.js"
 
@@ -8,9 +8,7 @@ export const initapp = (app, express)=>{
 app.use(express.json())
 app.use(cors())
 app.use('/user', userRouter)
-
 app.use('/course',course)
-app.use('/schedule',schedule)
 app.use('/cart',cart)
 app.use('/order',order)
 app.use('/leason',leason)

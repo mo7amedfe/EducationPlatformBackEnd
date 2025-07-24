@@ -9,7 +9,5 @@ router.post('/', isAuth(),order.createOrderFromCart)
 router.get('/enrolled-courses', isAuth(), order.getEnrolledCourses)
 
 
-router.post('/putInEnrolledCources', isAuth(),order.putInDataBase)
-
 
 export default router

@@ -98,43 +98,7 @@ export const createOrderFromCart = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const putInDataBase = asyncHandler(async(req,res,next)=>{
-  const {_id}=req.authuser
-  const {cartId}=req.body
-  if (!cartId) {
-    return res.status(400).json({ message: "Cart ID is required" });
-  }
 
-  const cart = await cartModel.findById(cartId);
-  if (!cart || cart.courses.length === 0) {
-    return res.status(400).json({ message: "Cart is empty or not found" });
-  }
-
-  if (!cart.schedule) {
-    return res.status(400).json({ message: "No schedule found in cart" });
-  }
-
-  // تجهيز بيانات الكورسات
-  const orderCourses = await Promise.all(
-    cart.courses.map(async (item) => {
-      const course = await courseModel.findById(item.courseId);
-      if (!course) return null;
-
-      return {
-        productId: course._id,
-      };
-    }));
-    const filteredCourses = orderCourses.filter(Boolean);
-    if (filteredCourses.length === 0) {
-      return res.status(400).json({ message: "No valid courses found in cart" });
-    }
-
-    const newOrder = await enrolledCoursesModel.create({
-      userid: cart.userId,
-      courses: filteredCourses,
-      schedule: cart.schedule,
-    });
-})
 
 // Get user's enrolled courses
 export const getEnrolledCourses = asyncHandler(async (req, res, next) => {

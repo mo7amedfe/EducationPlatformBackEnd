@@ -150,55 +150,8 @@ export const uploudProfilePic = asyncHandler(async (req, res, next) => {
   }
   res.status(200).json({ message: "done", user });
 });
-export const coverPictures = async (req, res, next) => {
-  const { _id } = req.authuser;
-  if (!req.files) {
-    return next(new Error("please upload pictures", { cause: 400 }));
-  }
 
-  const coverImages = [];
-  for (const file in req.files) {
-    for (const key of req.files[file]) {
-      const { secure_url, public_id } = await cloudinary.uploader.upload(
-        key.path,
-        {
-          folder: `Users/Covers/${_id}`,
-          resource_type: "image",
-        }
-      );
-      coverImages.push({ secure_url, public_id });
-    }
-  }
-  const user = await userModel.findById(_id);
 
-  user.coverPictures.length
-    ? coverImages.push(...user.coverPictures)
-    : coverImages;
-
-  const userNew = await userModel.findByIdAndUpdate(
-    _id,
-    {
-      coverPictures: coverImages,
-    },
-    {
-      new: true,
-    }
-  );
-  res.status(200).json({ message: "Done", userNew });
-};
-
-////try admin
-export const tryadmin = asyncHandler(async (req, res, next) => {
-  const { _id } = req.authuser;
-  const user = await userModel.findById(_id);
-  if (user.role == "Admin") {
-    return res.status(200).json({ message: "Admin", user });
-  }
-  if (user.role == "Instructor") {
-    return res.status(200).json({ message: "Instructor", user });
-  }
-  return res.status(200).json({ message: "User", user });
-});
 
 ////////*************get all users */
 export const getallusers = asyncHandler(async (req, res, next) => {
