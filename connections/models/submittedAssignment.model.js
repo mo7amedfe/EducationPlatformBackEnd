@@ -17,11 +17,7 @@ const submittedAssignmentSchema = new mongoose.Schema(
       public_id: String,
       filePath: String
     },
-    mark: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
+
     rating: {
       type: Number,
       min: 0,
@@ -36,6 +32,12 @@ const submittedAssignmentSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'graded', 'returned'],
       default: 'pending'
+    },
+    reviewerName: {
+      type: String
+    },
+    reviewerEmail: {
+      type: String
     }
   },
   {

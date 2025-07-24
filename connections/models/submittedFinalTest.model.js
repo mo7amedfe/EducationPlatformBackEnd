@@ -30,6 +30,12 @@ const submittedFinalTestSchema = new mongoose.Schema(
     submittedAt: {
       type: Date,
       default: Date.now
+    },
+    reviewerName: {
+      type: String
+    },
+    reviewerEmail: {
+      type: String
     }
   },
   {

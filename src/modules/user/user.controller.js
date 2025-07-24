@@ -6,8 +6,6 @@ import cloudinary from "../../utils/cloudinaryConfigration.js";
 import { submittedAssignmentModel } from "../../../connections/models/submittedAssignment.model.js";
 import { submittedFinalTestModel } from "../../../connections/models/submittedFinalTest.model.js";
 import { enrolledCoursesModel } from "../../../connections/models/enrolledcoureces.model.js";
-import { AssignMarkModel } from "../../../connections/models/assig.mark.model.js";
-import { placementTestModel } from "../../../connections/models/palcemetTest.model.js";
 import { cartModel } from "../../../connections/models/cart.model.js";
 import { orderModel } from "../../../connections/models/order.model.js";
 //========================= Sign Up ==================
@@ -242,10 +240,6 @@ export const deleteUserByAdmin = asyncHandler(async (req, res, next) => {
       submittedFinalTestModel.deleteMany({ userId }),
       // Delete enrolled courses
       enrolledCoursesModel.deleteMany({ userid: userId }),
-      // Delete assignment marks
-      AssignMarkModel.deleteMany({ userId }),
-      // Delete placement test results
-      placementTestModel.deleteMany({ student_Id: userId }),
       // Delete cart
       cartModel.deleteMany({ userId }),
       // Delete orders

@@ -12,7 +12,13 @@ import https from 'https'; // ضروري علشان نعمل request للملف 
 export const getAllSubmissions = asyncHandler(async (req, res, next) => {
   const { lessonId } = req.params;
   const submissions = await submittedAssignmentModel.find({ lessonId }).populate('userId', 'name email');
-  res.status(200).json({ submissions });
+  res.status(200).json({
+    submissions: submissions.map(sub => ({
+      ...sub.toObject(),
+      reviewerName: sub.reviewerName || null,
+      reviewerEmail: sub.reviewerEmail || null
+    }))
+  });
 });
 
 // Get a submission by ID
@@ -22,7 +28,13 @@ export const getSubmissionById = asyncHandler(async (req, res, next) => {
   if (!submission) {
     return res.status(404).json({ message: 'Submission not found' });
   }
-  res.status(200).json({ submission });
+  res.status(200).json({
+    submission: {
+      ...submission.toObject(),
+      reviewerName: submission.reviewerName || null,
+      reviewerEmail: submission.reviewerEmail || null
+    }
+  });
 });
 
 // Get a submission by ID (for students to view their own submission)
@@ -34,8 +46,13 @@ export const getMySubmission = asyncHandler(async (req, res, next) => {
   if (!submission) {
     return res.status(404).json({ message: 'Submission not found or unauthorized' });
   }
-
-  res.status(200).json({ submission });
+  res.status(200).json({
+    submission: {
+      ...submission.toObject(),
+      reviewerName: submission.reviewerName || null,
+      reviewerEmail: submission.reviewerEmail || null
+    }
+  });
 });
 
 // Download a submission (for students to download their own submission)
@@ -164,14 +181,22 @@ export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
       }
     });
 
-  res.status(200).json({ submissions });
+  res.status(200).json({
+    submissions: submissions.map(sub => ({
+      ...sub.toObject(),
+      reviewerName: sub.reviewerName || null,
+      reviewerEmail: sub.reviewerEmail || null
+    }))
+  });
 });
 
 // Grade a submission (admin and instructor only)
 export const gradeSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
-  const { role } = req.authuser;
+  const { role,username,email } = req.authuser;
+  const reviewerUserName= username
+  const reviewerEmail= email
 
   if (role !== 'Admin' && role !== 'Instructor') {
     return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
@@ -189,6 +214,8 @@ export const gradeSubmission = asyncHandler(async (req, res, next) => {
   submission.rating = rating;
   if (feedback) submission.feedback = feedback;
   submission.status = 'graded';
+  submission.reviewerName = reviewerUserName;
+  submission.reviewerEmail = reviewerEmail;
   await submission.save();
 
   // Get the updated submission with populated fields
@@ -206,7 +233,14 @@ export const gradeSubmission = asyncHandler(async (req, res, next) => {
       }
     });
 
-  res.status(200).json({ message: 'Submission graded successfully', submission: updatedSubmission });
+  res.status(200).json({ 
+    message: 'Submission graded successfully', 
+    submission: updatedSubmission,
+    reviewerName: reviewerUserName,
+    reviewerEmail: reviewerEmail
+  });
+
+  
 });
 
 export const getStudentAssignmentSubmissions = async (req, res) => {
@@ -244,7 +278,9 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
           courseName: submission.lessonId?.courseId?.title || 'Unknown Course',
           courseId: submission.lessonId?.courseId?._id || null,
           submittedAt: submission.submittedAt,
-          status: submission.status || 'pending'
+          status: submission.status || 'pending',
+          reviewerName: submission.reviewerName || null,
+          reviewerEmail: submission.reviewerEmail || null
         };
 
         // Only include mark, rating and feedback if the submission is graded

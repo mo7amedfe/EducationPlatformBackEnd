@@ -1,14 +1,11 @@
 import mongoose, { Schema } from 'mongoose'
 
-// const { boolean } = Joi;
-
 
 const userSchema = new Schema(
   {
     username: {
       type: String,
       required: true,
-      // lowercase: true,
     },
     email: {
       type: String,
@@ -27,15 +24,7 @@ const userSchema = new Schema(
 
     profile_pic: {secure_url:String,public_id:String},
 
-    score: {
-      type: Number,
-      default: undefined,
-    },
-    schedule_time: {
-      type: String,
-      enum: ['Sunday 3 pm', 'Tuesday 3 pm', 'Friday 3 pm'],
-      default: null
-    },
+
   
     role:{
       type: String,
@@ -43,12 +32,8 @@ const userSchema = new Schema(
       enum:['User','Admin','Instructor']
       
     },
-    phoneNumber:{
-      type:String
-    },
-    assig:[{
-      
-    }]
+  
+
   },
   {
     timestamps: true,

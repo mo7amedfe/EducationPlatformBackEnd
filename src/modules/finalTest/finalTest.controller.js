@@ -345,7 +345,13 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
         },
       });
 
-    res.status(200).json({ submissions });
+    res.status(200).json({
+      submissions: submissions.map(sub => ({
+        ...sub.toObject(),
+        reviewerName: sub.reviewerName || null,
+        reviewerEmail: sub.reviewerEmail || null
+      }))
+    });
   }
 );
 
@@ -353,7 +359,7 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
 export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
-  const { role } = req.authuser;
+  const { role, username, email } = req.authuser;
 
   if (role !== "Admin" && role !== "Instructor") {
     return res
@@ -373,6 +379,8 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   submission.rating = rating;
   if (feedback) submission.feedback = feedback;
   submission.status = "graded";
+  submission.reviewerName = username;
+  submission.reviewerEmail = email;
   await submission.save();
 
   // Get the updated submission with populated fields
@@ -394,6 +402,8 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     message: "Final test submission graded successfully",
     submission: updatedSubmission,
+    reviewerName: username,
+    reviewerEmail: email
   });
 });
 
@@ -567,7 +577,7 @@ export const getStudentFinalTestFeedback = async (req, res) => {
       .find({
         userId,
       })
-      .populate("userId", "name email")
+      .populate("userId", "username email")
       .populate({
         path: "finalTestId",
         select: "courseId",
@@ -599,6 +609,8 @@ export const getStudentFinalTestFeedback = async (req, res) => {
           courseId: submission.finalTestId?.courseId?._id || null,
           submittedAt: submission.submittedAt,
           status: submission.status || "pending",
+          reviewerName: submission.reviewerName || null,
+          reviewerEmail: submission.reviewerEmail || null
         };
 
         // Only include rating and feedback if the submission is graded
