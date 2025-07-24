@@ -1,9 +1,6 @@
 import { Router } from 'express';
 import { addleason, 
-  getLessonsByCourse, 
-  getLesson, 
-  updateLesson, 
-  deleteLesson,
+  getLessonsByCourse,  
   addvideotoleason,
   uploadAssignment,
   downloadAssignment
@@ -19,7 +16,6 @@ const router = Router();
 // Lesson routes
 router.post('/', isAuth(), checkAdminOrInstructor(), addleason);
 router.get('/course/:courseId', isAuth(), getLessonsByCourse);
-router.get('/:lessonId', isAuth(), getLesson);
 // Video and assignment routes
 router.post('/:lessonId/video', isAuth(), checkAdminOrInstructor(), multercloudFunction(allowedExtensions.Videos).single('video'), addvideotoleason);
 router.post('/:lessonId/submit', isAuth(), multercloudFunction(allowedExtensions.Files).single('file'), uploadAssignment);
