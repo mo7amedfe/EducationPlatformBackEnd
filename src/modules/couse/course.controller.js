@@ -81,22 +81,7 @@ export const getCourses = asyncHandler(async (req, res) => {
   res.json(courses);
 });
 
-// export const deleteCourse = asyncHandler(async (req, res, next) => {
-//   const { courseId } = req.params;
 
-//   const course = await courseModel.findById(courseId);
-//   if (!course) {
-//     return res.status(404).json({ message: 'Course not found' });
-//   }
-
-//   // Delete all schedules associated with the course
-//   await scheduleModel.deleteMany({ courseId });
-
-//   // Delete the course
-//   await courseModel.findByIdAndDelete(courseId);
-
-//   res.status(200).json({ message: 'Course and associated schedules deleted successfully' });
-// });
 export const deleteCourse = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 

@@ -9,10 +9,7 @@ import { allowedExtensions } from '../../utils/allowedExtentions.js'
 
 router.post('/',isAuth(),checkAdminOrInstructor(),course.addCourse)
 router.get('/',course.getCourses)
-
-
 router.delete('/:courseId', isAuth(), course.deleteCourse);
-
 router.post('/courseCover',isAuth(),multercloudFunction(allowedExtensions.Image).single('courseimage'),course.uploadCoursePic
 );
 

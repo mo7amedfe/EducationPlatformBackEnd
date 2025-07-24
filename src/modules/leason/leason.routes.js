@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { 
-  addleason, 
+import { addleason, 
   getLessonsByCourse, 
   getLesson, 
   updateLesson, 
@@ -13,8 +12,6 @@ import { isAuth } from '../../middelwares/auth.js';
 import { multercloudFunction } from '../../services/multerCloudenary.js';
 import { allowedExtensions } from '../../utils/allowedExtentions.js';
 import { checkAdminOrInstructor } from '../../middelwares/adminAuth.js'
-import multer from 'multer';
-import path from 'path';
 
 const router = Router();
 
@@ -23,9 +20,6 @@ const router = Router();
 router.post('/', isAuth(), checkAdminOrInstructor(), addleason);
 router.get('/course/:courseId', isAuth(), getLessonsByCourse);
 router.get('/:lessonId', isAuth(), getLesson);
-router.put('/:lessonId', isAuth(), updateLesson);
-router.delete('/:lessonId', isAuth(), deleteLesson);
-
 // Video and assignment routes
 router.post('/:lessonId/video', isAuth(), checkAdminOrInstructor(), multercloudFunction(allowedExtensions.Videos).single('video'), addvideotoleason);
 router.post('/:lessonId/submit', isAuth(), multercloudFunction(allowedExtensions.Files).single('file'), uploadAssignment);

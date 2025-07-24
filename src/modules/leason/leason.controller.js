@@ -61,75 +61,9 @@ export const getLessonsByCourse = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Get a specific lesson
-export const getLesson = asyncHandler(async (req, res, next) => {
-  const { lessonId } = req.params;
 
-  const lesson = await leasonModel
-    .findById(lessonId)
-    .populate("courseId", "title")
-    .populate("submissions.userId", "name email");
 
-  if (!lesson) {
-    return res.status(404).json({ message: "Lesson not found" });
-  }
 
-  res.status(200).json({
-    message: "Lesson retrieved successfully",
-    lesson,
-  });
-});
-
-// Update a lesson
-export const updateLesson = asyncHandler(async (req, res, next) => {
-  const { lessonId } = req.params;
-  const { title, description } = req.body;
-
-  const lesson = await leasonModel.findById(lessonId);
-  if (!lesson) {
-    return res.status(404).json({ message: "Lesson not found" });
-  }
-
-  if (title) lesson.title = title;
-  if (description) lesson.description = description;
-
-  await lesson.save();
-
-  res.status(200).json({
-    message: "Lesson updated successfully",
-    lesson,
-  });
-});
-
-// Delete a lesson
-export const deleteLesson = asyncHandler(async (req, res, next) => {
-  const { lessonId } = req.params;
-
-  const lesson = await leasonModel.findById(lessonId);
-  if (!lesson) {
-    return res.status(404).json({ message: "Lesson not found" });
-  }
-
-  if (lesson.video?.public_id) {
-    await cloudinary.uploader.destroy(lesson.video.public_id);
-  }
-  if (lesson.assignment?.public_id) {
-    await cloudinary.uploader.destroy(lesson.assignment.public_id);
-  }
-  for (const submission of lesson.submissions) {
-    if (submission.file?.public_id) {
-      await cloudinary.uploader.destroy(submission.file.public_id);
-    }
-  }
-
-  await courseModel.findByIdAndUpdate(lesson.courseId, {
-    $pull: { lessons: lessonId },
-  });
-
-  await leasonModel.findByIdAndDelete(lessonId);
-
-  res.status(200).json({ message: "Lesson deleted successfully" });
-});
 
 // Upload video to lesson
 export const addvideotoleason = asyncHandler(async (req, res, next) => {

@@ -101,45 +101,6 @@ export const deleteCourseFromCart = asyncHandler(async (req, res, next) => {
   res.status(200).json({ message: "Course removed from cart", cart: userCart });
 });
 
-// ======================= Update Schedule in Cart ==================
-export const updateScheduleInCart = asyncHandler(async (req, res, next) => {
-  const { _id } = req.authuser;
-  const userId = _id;
-  const { courseId, newSchedule } = req.body;
-
-  if (!newSchedule || !newSchedule.day || !newSchedule.time) {
-    return res.status(400).json({ message: "New schedule (day and time) is required" });
-  }
-
-  const userCart = await cartModel.findOne({ userId });
-  if (!userCart) {
-    return next(new Error("Cart not found", { cause: 404 }));
-  }
-
-  const course = userCart.courses.find(
-    (item) => item.courseId.toString() === courseId
-  );
-
-  if (!course) {
-    return next(new Error("Course not found in cart", { cause: 404 }));
-  }
-
-  // Verify that the new schedule exists in the course
-  const courseCheck = await courseModel.findById(courseId);
-  const scheduleExists = courseCheck.schedules.some(
-    s => s.day === newSchedule.day && s.time === newSchedule.time
-  );
-
-  if (!scheduleExists) {
-    return next(new Error("Invalid schedule for this course", { cause: 400 }));
-  }
-
-  course.schedule = newSchedule;
-  await userCart.save();
-
-  return res.status(200).json({ message: "Schedule updated in cart", cart: userCart });
-});
-
 // ======================= Clear Cart ==================
 export const clearCart = asyncHandler(async (req, res, next) => {
   const { _id } = req.authuser;
