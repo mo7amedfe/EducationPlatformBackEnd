@@ -212,3 +212,63 @@ export const downloadSubmission = asyncHandler(async (req, res) => {
   }
 });
 
+export const getStudentAssignmentSubmissions = async (req, res) => {
+  try {
+    const userId = req.authuser;
+
+    // Find all assignment submissions for this student with proper population
+    const submissions = await submittedAssignmentModel.find({
+      userId
+    }).populate('userId', 'name email')
+      .populate({
+        path: 'lessonId',
+        select: 'title courseId',
+        populate: {
+          path: 'courseId',
+          select: 'title'
+        }
+      });
+
+    if (!submissions || submissions.length === 0) {
+      return res.status(404).json({
+        message: 'No assignment submissions found'
+      });
+    }
+
+    // Return all submissions with their details
+    return res.status(200).json({
+      message: 'Assignment submissions retrieved successfully',
+      submissions: submissions.map(submission => {
+        const submissionData = {
+          id: submission._id,
+          studentName: submission.userId?.name || 'Unknown',
+          studentEmail: submission.userId?.email || 'Unknown',
+          lessonTitle: submission.lessonId?.title || 'Unknown Lesson',
+          courseName: submission.lessonId?.courseId?.title || 'Unknown Course',
+          courseId: submission.lessonId?.courseId?._id || null,
+          submittedAt: submission.submittedAt,
+          status: submission.status || 'pending'
+        };
+
+        // Only include mark, rating and feedback if the submission is graded
+        if (submission.status === 'graded') {
+          submissionData.mark = submission.mark || 'No Mark';
+          submissionData.rating = submission.rating || 'No Rating';
+          submissionData.feedback = submission.feedback || 'No feedback provided';
+        } else {
+          submissionData.mark = null;
+          submissionData.rating = null;
+          submissionData.feedback = null;
+        }
+
+        return submissionData;
+      })
+    });
+  } catch (error) {
+    console.error('Error getting assignment submissions:', error);
+    return res.status(500).json({
+      message: 'Error getting assignment submissions',
+      error: error.message
+    });
+  }
+};
