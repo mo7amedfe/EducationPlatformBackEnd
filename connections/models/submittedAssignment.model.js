@@ -33,11 +33,9 @@ const submittedAssignmentSchema = new mongoose.Schema(
       enum: ['pending', 'graded', 'returned'],
       default: 'pending'
     },
-    reviewerName: {
-      type: String
-    },
-    reviewerEmail: {
-      type: String
+    reviewerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   {

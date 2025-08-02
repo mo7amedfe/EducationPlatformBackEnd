@@ -104,6 +104,10 @@ export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
       select: 'username email'
     })
     .populate({
+      path: 'reviewerId',
+      select: 'username email'
+    })
+    .populate({
       path: 'lessonId',
       select: 'title description courseId',
       populate: {
@@ -115,8 +119,8 @@ export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     submissions: submissions.map(sub => ({
       ...sub.toObject(),
-      reviewerName: sub.reviewerName || null,
-      reviewerEmail: sub.reviewerEmail || null
+      reviewerName: sub.reviewerId?.username || null,
+      reviewerEmail: sub.reviewerId?.email || null
     }))
   });
 });
@@ -125,9 +129,7 @@ export const reviewAllSubmissions = asyncHandler(async (req, res, next) => {
 export const gradeSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
-  const { role,username,email } = req.authuser;
-  const reviewerUserName= username
-  const reviewerEmail= email
+  const { role, _id } = req.authuser;
 
   if (role !== 'Admin' && role !== 'Instructor') {
     return res.status(403).json({ message: 'Unauthorized: Admin or Instructor access required' });
@@ -145,14 +147,17 @@ export const gradeSubmission = asyncHandler(async (req, res, next) => {
   submission.rating = rating;
   if (feedback) submission.feedback = feedback;
   submission.status = 'graded';
-  submission.reviewerName = reviewerUserName;
-  submission.reviewerEmail = reviewerEmail;
+  submission.reviewerId = _id;
   await submission.save();
 
   // Get the updated submission with populated fields
   const updatedSubmission = await submittedAssignmentModel.findById(submissionId)
     .populate({
       path: 'userId',
+      select: 'username email'
+    })
+    .populate({
+      path: 'reviewerId',
       select: 'username email'
     })
     .populate({
@@ -167,11 +172,9 @@ export const gradeSubmission = asyncHandler(async (req, res, next) => {
   res.status(200).json({ 
     message: 'Submission graded successfully', 
     submission: updatedSubmission,
-    reviewerName: reviewerUserName,
-    reviewerEmail: reviewerEmail
+    reviewerName: updatedSubmission.reviewerId?.username || null,
+    reviewerEmail: updatedSubmission.reviewerId?.email || null
   });
-
-  
 });
 
 
@@ -221,6 +224,10 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
       userId
     }).populate('userId', 'name email')
       .populate({
+        path: 'reviewerId',
+        select: 'username email'
+      })
+      .populate({
         path: 'lessonId',
         select: 'title courseId',
         populate: {
@@ -241,22 +248,21 @@ export const getStudentAssignmentSubmissions = async (req, res) => {
       submissions: submissions.map(submission => {
         const submissionData = {
           id: submission._id,
-          studentName: submission.userId?.name || 'Unknown',
-          studentEmail: submission.userId?.email || 'Unknown',
           lessonTitle: submission.lessonId?.title || 'Unknown Lesson',
           courseName: submission.lessonId?.courseId?.title || 'Unknown Course',
           courseId: submission.lessonId?.courseId?._id || null,
           submittedAt: submission.submittedAt,
-          status: submission.status || 'pending'
+          status: submission.status || 'pending',
+          reviewerName: submission.reviewerId?.username || null,
+          reviewerEmail: submission.reviewerId?.email || null
         };
 
         // Only include mark, rating and feedback if the submission is graded
         if (submission.status === 'graded') {
-          submissionData.mark = submission.mark || 'No Mark';
           submissionData.rating = submission.rating || 'No Rating';
           submissionData.feedback = submission.feedback || 'No feedback provided';
         } else {
-          submissionData.mark = null;
+     
           submissionData.rating = null;
           submissionData.feedback = null;
         }

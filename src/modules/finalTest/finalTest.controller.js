@@ -175,6 +175,10 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
         select: "username email",
       })
       .populate({
+        path: "reviewerId",
+        select: "username email",
+      })
+      .populate({
         path: "finalTestId",
         select: "courseId dueDate",
         populate: {
@@ -186,8 +190,8 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
     res.status(200).json({
       submissions: submissions.map(sub => ({
         ...sub.toObject(),
-        reviewerName: sub.reviewerName || null,
-        reviewerEmail: sub.reviewerEmail || null
+        reviewerName: sub.reviewerId?.username || null,
+        reviewerEmail: sub.reviewerId?.email || null
       }))
     });
   }
@@ -197,7 +201,7 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
 export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   const { submissionId } = req.params;
   const { rating, feedback } = req.body;
-  const { role, username, email } = req.authuser;
+  const { role, _id } = req.authuser;
 
   if (role !== "Admin" && role !== "Instructor") {
     return res
@@ -217,8 +221,7 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   submission.rating = rating;
   if (feedback) submission.feedback = feedback;
   submission.status = "graded";
-  submission.reviewerName = username;
-  submission.reviewerEmail = email;
+  submission.reviewerId = _id;
   await submission.save();
 
   // Get the updated submission with populated fields
@@ -226,6 +229,10 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
     .findById(submissionId)
     .populate({
       path: "userId",
+      select: "username email",
+    })
+    .populate({
+      path: "reviewerId",
       select: "username email",
     })
     .populate({
@@ -240,8 +247,8 @@ export const gradeFinalTestSubmission = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     message: "Final test submission graded successfully",
     submission: updatedSubmission,
-    reviewerName: username,
-    reviewerEmail: email
+    reviewerName: updatedSubmission.reviewerId?.username || null,
+    reviewerEmail: updatedSubmission.reviewerId?.email || null
   });
 });
 
@@ -377,6 +384,10 @@ export const getStudentFinalTestFeedback = async (req, res) => {
       })
       .populate("userId", "username email")
       .populate({
+        path: "reviewerId",
+        select: "username email",
+      })
+      .populate({
         path: "finalTestId",
         select: "courseId",
         populate: {
@@ -407,8 +418,8 @@ export const getStudentFinalTestFeedback = async (req, res) => {
           courseId: submission.finalTestId?.courseId?._id || null,
           submittedAt: submission.submittedAt,
           status: submission.status || "pending",
-          reviewerName: submission.reviewerName || null,
-          reviewerEmail: submission.reviewerEmail || null
+          reviewerName: submission.reviewerId?.username || null,
+          reviewerEmail: submission.reviewerId?.email || null
         };
 
         // Only include rating and feedback if the submission is graded

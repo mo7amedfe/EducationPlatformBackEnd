@@ -31,11 +31,9 @@ const submittedFinalTestSchema = new mongoose.Schema(
       type: Date,
       default: Date.now
     },
-    reviewerName: {
-      type: String
-    },
-    reviewerEmail: {
-      type: String
+    reviewerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   {
