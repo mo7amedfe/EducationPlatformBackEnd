@@ -189,11 +189,20 @@ export const reviewAllFinalTestSubmissions = asyncHandler(
 
     res.status(200).json({
       submissions: submissions.map(sub => ({
-        ...sub.toObject(),
+        id: sub._id,
+        studentName: sub.userId?.username || "Unknown",
+        studentEmail: sub.userId?.email || "Unknown",
+        courseName: sub.finalTestId?.courseId?.title || "Unknown Course",
+        courseId: sub.finalTestId?.courseId?._id || null,
+        submittedAt: sub.submittedAt,
+        status: sub.status || "pending",
+        rating: sub.rating || null,
+        feedback: sub.feedback || null,
         reviewerName: sub.reviewerId?.username || null,
         reviewerEmail: sub.reviewerId?.email || null
       }))
     });
+    console.log(submissions);
   }
 );
 
