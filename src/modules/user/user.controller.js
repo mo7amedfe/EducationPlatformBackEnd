@@ -179,7 +179,7 @@ export const deleteUserByAdmin = asyncHandler(async (req, res, next) => {
 
   const user = await userModel.findById(_id);
   const userdelete = await userModel.findById(userId);
-  
+
   if (!userdelete) {
     return res.json({ message: "cannot found user" });
   }
@@ -200,7 +200,7 @@ export const deleteUserByAdmin = asyncHandler(async (req, res, next) => {
     ]);
 
     // Finally delete the user
-    await userModel.findByIdAndDelete(userId);
+    await userModel.findByIdAndDelete(userdelete._id);
 
     return res.status(200).json({ message: "User and all related records deleted successfully" });
   }
